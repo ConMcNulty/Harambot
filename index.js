@@ -19,19 +19,24 @@ client.on('ready', () => {
 
 // Scrape usernames from website
 async function scrapeUsernames() {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  
-  await page.goto(websiteUrl);
-  
-  // Adjust selector based on website structure
-  const usernames = await page.$$eval('selector-for-usernames', elements => 
-    elements.map(el => el.textContent.trim())
-  );
-  
-  await browser.close();
-  return usernames;
-}
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    
+    await page.goto(config.websiteUrl);
+    
+    const usernames = await page.$$eval(config.usernameSelector, elements => 
+      elements.map(el => {
+        // Handle special characters and trim whitespace
+        const name = el.textContent
+          .replace(/[^a-zA-Z0-9ßẞ\u00C0-\u017F]/g, '') // Allow special characters
+          .trim();
+        return name;
+      }).filter(name => name.length > 0)
+    );
+    
+    await browser.close();
+    return [...new Set(usernames)]; // Remove duplicates
+  }
 
 // Check messages in channel
 async function checkMessages(channel) {
